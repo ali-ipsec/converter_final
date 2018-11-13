@@ -1,0 +1,96 @@
+RAM Allocation [bytes]
+Variable                                                                          Address   Size
+------------------------------------------------------------------------------------------------
+ref_sensor_pulse_measurement_started                                              0x0260       1
+ref_sensor_pulse_measurement_stopped                                              0x0261       1
+measure_Q3_calib                                                                  0x0262       1
+measure_Q2_calib                                                                  0x0263       1
+accuracy_measurement                                                              0x0264       1
+measure_Q3_calib_send_data                                                        0x0265       1
+measure_Q2_calib_send_data                                                        0x0266       1
+accuracy_measurement_send_data                                                    0x0267       1
+pulse_is_detected                                                                 0x0268       1
+calibration_changed                                                               0x0269       1
+wd_monitoring                                                                     0x026A       1
+wd_test                                                                           0x026B       1
+serial_number_applied                                                             0x026C       1
+read_max_samples                                                                  0x026D       1
+read_min_samples                                                                  0x026E       1
+dbi_final                                                                         0x026F       4
+offset                                                                            0x0273       4
+dbi_added_value                                                                   0x0277       4
+gain                                                                              0x027B       4
+pulse_duration_1                                                                  0x027F       4
+dbi_Q3                                                                            0x0283       4
+diff_Q3                                                                           0x0287       4
+dbi_Q2                                                                            0x028B       4
+diff_Q2                                                                           0x028F       4
+sum_avg_sum_min                                                                   0x0293       4
+sum_avg_sum_max                                                                   0x0297       4
+ovf_timer0_cnt                                                                    0x029B       4
+pulse_edge_cnt                                                                    0x029F       4
+eeprom_serial_num                                                                 0x02A3       4
+db_changed                                                                        0x02A7       1
+state                                                                             0x02A8       1
+rx_buffer                                                                         0x02A9     250
+rx_wr_index                                                                       0x03A3       1
+rx_rd_index                                                                       0x03A4       1
+rx_counter                                                                        0x03A5       1
+state                                                                             0x03A6       1
+counter                                                                           0x03A7       1
+wathchdog_counter                                                                 0x03A8       2
+_seed                                                                             0x03AA       4
+
+EEPROM Allocation [bytes]
+Variable                                                                          Address   Size
+------------------------------------------------------------------------------------------------
+
+Register Allocation
+Variable                                                                          Register  Size
+------------------------------------------------------------------------------------------------
+sample_ready_flag                                                                 R5           1
+zeroAdjusting                                                                     R4           1
+startSendingDiffValues                                                            R7           1
+stopSendingDiffValues                                                             R6           1
+flewValueChanged                                                                  R9           1
+reade2prom                                                                        R8           1
+db_monitoring                                                                     R11          1
+offset_changed                                                                    R10          1
+send_offset                                                                       R13          1
+calibration_applied                                                               R12          1
+rx_buffer_overflow                                                                R2.0      1bit
+
+FLASH Allocation [words]
+Function                                                                          Address   Size
+------------------------------------------------------------------------------------------------
+spi_sampling                                                                      0x000D0     56
+ext_int1_isr                                                                      0x00108    171
+usart_rx_isr                                                                      0x001B3     69
+timer0_ovf_isr                                                                    0x001F8     21
+timer1_compa_isr                                                                  0x0020D     72
+timer2_comp_isr                                                                   0x00255    108
+process_rx_buffer                                                                 0x002C1    134
+send_f                                                                            0x00347     53
+sendParamsFloat                                                                   0x0037C     92
+read_eeprom_values                                                                0x003D8     83
+init                                                                              0x0042B     71
+enable_watchdog                                                                   0x00472      3
+time2_init                                                                        0x00475      9
+main                                                                              0x0047E   1288
+memcpy                                                                            0x00986     18
+memset                                                                            0x00998     16
+strchr                                                                            0x009A8     13
+strlen                                                                            0x009B5     12
+strlenf                                                                           0x009C1     13
+putchar                                                                           0x009CE      7
+put_usart_G102                                                                    0x009D5     10
+put_buff_G102                                                                     0x009DF     58
+_print_G102                                                                       0x00A19    308
+sprintf                                                                           0x00B4D     46
+printf                                                                            0x00B7B     31
+fabs                                                                              0x00B9A      8
+atol                                                                              0x00BA2     70
+atof                                                                              0x00BE8    252
+spi                                                                               0x00CE4      8
+isdigit                                                                           0x00CEC      9
+isspace                                                                           0x00CF5     11
