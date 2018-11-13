@@ -47,17 +47,17 @@ void processGenerateFout(unsigned char);
 void main(void)
 {
 // Declare your local variables here
-
+      
    //char gainStr[10], offsetStr[10], temp[20];      
    //char * ch_temp;
    unsigned char idx = 0, flow_sample_counter=0, check_stop_process = 0, enableSendingValues = 0,
-            samples_diff_ep_flag = 0,i = 0, ep_sampling_check_flag = 0, empty_pipe_type = NO_EP, ep_detected_cnt = 0;
+            samples_diff_ep_flag = 0, ep_sampling_check_flag = 0, empty_pipe_type = NO_EP, ep_detected_cnt = 0;
    
    signed int max_sample = 0, min_sample = 0, last_sample_pos  = 0 , first_sample_pos = 0,last_sample_neg  = 0 , first_sample_neg = 0,temp_max_sample_ep = 0, temp_min_sample_ep = 0,
        max_sample_pulse_pos_ep = 0, min_sample_pulse_neg_ep = 0;
    unsigned int max_count = 0, min_count = 0, curr_max_cnt = 0, curr_min_cnt = 0, curr_sum_max= 0, curr_sum_min = 0,
                 ep_max_cnt = 0, ep_min_cnt = 0;
-   signed long int max_samples[20],min_samples[20];
+   //signed long int max_samples[20],min_samples[20];
    signed long int sum_max = 0, sum_min = 0; 
    
    unsigned long int sum_diff_counter = 0, cntr = 0;
@@ -70,7 +70,7 @@ void main(void)
     char ResetFlags = MCUCSR ;
    static unsigned int wathchdog_counter;  
    init();
-   
+     
    // eeprom_write_dword(SERIAL_ADDR,SERIAL_NUMBER);
    // delay_ms(2000);  
     
@@ -89,7 +89,7 @@ void main(void)
 while(1)
       {       
        #asm("WDR");
-       
+          
       // Place your code here
         if(wd_test)
         {  
@@ -121,8 +121,8 @@ while(1)
         if(ep_positive_pulse_measurement)
         {       
             temp_max_sample_ep = abs(spi_sampling());   
-          //  max_samples[ep_max_cnt] = temp_max_sample_ep; 
-          //  ep_max_cnt++;                          
+            //max_samples[ep_max_cnt] = temp_max_sample_ep; 
+            //ep_max_cnt++;                          
            // printf("ep %d\n",temp_max_sample_ep);
             if (temp_max_sample_ep > max_sample_pulse_pos_ep )
                 max_sample_pulse_pos_ep = temp_max_sample_ep;    
@@ -131,8 +131,8 @@ while(1)
         if(ep_negative_pulse_measurement)
         {   
             temp_min_sample_ep = abs(spi_sampling()); 
-           // min_samples[ep_min_cnt] = temp_min_sample_ep; 
-           // ep_min_cnt++;
+            //min_samples[ep_min_cnt] = temp_min_sample_ep; 
+            //ep_min_cnt++;
             // printf("%d %d\n",temp_min_sample_ep,abs(temp_min_sample_ep));            
             if (temp_min_sample_ep > min_sample_pulse_neg_ep )
                 min_sample_pulse_neg_ep = temp_min_sample_ep;
@@ -182,6 +182,7 @@ while(1)
         ///*
         if(respose_uart_activity && enableSendingValues)
         {                                              
+            
             enableSendingValues = 0;
             if(serial_number_applied)
                 processSerialNumber();                    
@@ -207,7 +208,7 @@ while(1)
              if(windowSizeChanged)
                 processCuttOff(WINDOW_SIZE_ADDR);  
             if(ep_change_diff_samples_limit_flag)
-               processCuttOff(EP_SAMPLES_LIMIT_ADDR);
+               processCuttOff(EP_SAMPLES_DIFF_LIMIT_ADDR);
             if(ep_change_pulse_limit_flag)
                processCuttOff(EP_PULSE_MAX_VALUE_LIMIT_ADDR);
             if(inverseSignCmd)
@@ -255,9 +256,9 @@ while(1)
           if(ep_check_cmd)
             {
                 
-              //  printf("f-lp %d l-fn %d\n",first_sample_pos - last_sample_pos,last_sample_neg-first_sample_neg);
+               // printf("f-lp %d l-fn %d\n",first_sample_pos - last_sample_pos,last_sample_neg-first_sample_neg);
               //  printf("fp %d ls %d f-lp %d ln %d fn %d l-fn%d\n",first_sample_pos,last_sample_pos,first_sample_pos - last_sample_pos,last_sample_neg,first_sample_neg,last_sample_neg-first_sample_neg);
-              //  printf("mpe %d mne %d\n",max_sample_pulse_pos_ep,min_sample_pulse_neg_ep);
+               // printf("mpe %d mne %d\n",max_sample_pulse_pos_ep,min_sample_pulse_neg_ep);
                 send_array[0] = first_sample_pos-last_sample_pos;
                 send_array[1] = last_sample_neg-first_sample_neg;
                 send_array[2] = max_sample_pulse_pos_ep;
@@ -265,21 +266,24 @@ while(1)
                 send_array[4] = empty_pipe_type; 
                 //send_array[4] = dbi_temp;
                 sendParamsFloat(send_array,5);        
-              ///*
+              /*
               // printf("p %d m %d\n",ep_max_cnt,ep_min_cnt);
-               /* 
+                
                printf("max samples: ");
-                for(i = 0 ; i < ep_max_cnt; i++)
+                for(i = 0 ; i < 5; i++)
                     printf("[%d]%d",i,max_samples[i]);
+                   
                 printf("\nmin samples: ");
-                for(i = 0 ; i < ep_max_cnt; i++)
+                for(i = 0 ; i < 10; i++)
                     printf("[%d]%d",i,min_samples[i]);
                 printf("\n");
-           // */
+                */
                 rx_wr_index = 0; 
-            }
+            } 
+            
             ep_max_cnt = 0;
             ep_min_cnt = 0; 
+            
             if (max_sample_pulse_pos_ep < pulseMaxValuesLimit && min_sample_pulse_neg_ep < pulseMaxValuesLimit)
             {
                ep_sampling_check_flag = 1;
@@ -293,8 +297,10 @@ while(1)
                //LED = 0;
             }  
             max_sample_pulse_pos_ep = 0;
-            min_sample_pulse_neg_ep = 0;
+            min_sample_pulse_neg_ep = 0;  
+            //printf("f-lp %d l-fn %d %d\n",first_sample_pos - last_sample_pos,last_sample_neg-first_sample_neg,diffSamplesLimit);
             if( (first_sample_pos - last_sample_pos  > diffSamplesLimit) || (last_sample_neg -first_sample_neg > diffSamplesLimit))
+            
                 samples_diff_ep_flag = 1;
             else
                 samples_diff_ep_flag = 0;        
@@ -343,7 +349,8 @@ while(1)
             //printf("min %d max %d\n",max_count,min_count);
             sendParamsFloat(send_array,4);
             rx_wr_index = 0;            
-       }
+       } 
+       //printf("xc %d mc %d\n",max_count,min_count);
        max_count = 0;
        min_count = 0;             
        curr_max_cnt = 0;
@@ -516,19 +523,22 @@ while(1)
                     dbi_final = fabs(dbi_temp); 
                     if(ep_sampling_check_flag)
                     {
-                        empty_pipe_type = PULSE_LEVEL;
+                        empty_pipe_type = PULSE_LEVEL; 
+                        //printf("pulse\n");
                         //EMPTY_PIPE = 0;
                         //LED = 1;
                     }
-                    else if (dbi_final > (cutt_off/0.8)*31.25)
+                    else if (dbi_final > (cutt_off/0.8)*31.25*1.3)
                     {
-                        empty_pipe_type = DBI_VALUE;
+                        empty_pipe_type = DBI_VALUE; 
+                        //printf("dbi\n");
                         //EMPTY_PIPE = 0;
                         //LED = 1;
                     }
                     else if(samples_diff_ep_flag)
                     {
-                        empty_pipe_type = SAMPLE_DIFF_LEVEL;
+                        empty_pipe_type = SAMPLE_DIFF_LEVEL;  
+                        //printf("sample\n");
                         //EMPTY_PIPE = 0;
                         //LED = 1;
                     }
@@ -557,7 +567,10 @@ while(1)
                         if(dbi_temp < 0)  // check reverse current
                         {              
                             if(dbi_final < cutt_off)
+                            {                 
+                                DIRECTION = 0;
                                 TCCR1B &= 0xF8;
+                            }
                             else
                             {    
                                 DIRECTION = 1;
@@ -686,7 +699,7 @@ void processCalibrationChanged()
                 
     rx_wr_index = 0;  
     //TCCR1B |= 0x03;  // start timer1 after calibration  
-    delay_ms(1000); 
+    delay_ms(1); 
              
     //LED_R = 0; 
 }
@@ -703,7 +716,7 @@ void processCalibrationApplied()
     //        diff_Q3,dbi_Q3,diff_Q2,dbi_Q2,diff_Q3 - diff_Q2,dbi_Q3 - dbi_Q2,(diff_Q3 - diff_Q2)/(dbi_Q3 - dbi_Q2),diff_Q3 - gain*dbi_Q3);
             
     //TCCR1B |= 0x03;  // start timer1 after calibration
-    delay_ms(1000);
+    delay_ms(100);
     send_array[0] = gain;
     send_array[1] = offset;
     eeprom_write_byte(0,0xBB);
@@ -745,13 +758,13 @@ void processPulseWidthSetting()
 void read_eeprom_Program1()
 {
            unsigned char check_byte; 
-           unsigned long int serial_number = 0;
+           //unsigned long int serial_number = 0;
            //char addr;
            float send_array[4];
-           serial_number = 0;
+           //serial_number = 0;
            rx_wr_index = 0; 
            reade2prom1 = 0;  
-           delay_ms(1000); 
+           delay_ms(100); 
            check_byte = eeprom_read_byte(0);  
            //serial_number = eeprom_read_dword(SERIAL_ADDR);
            
@@ -785,45 +798,25 @@ void read_eeprom_Program1()
 }
 void read_eeprom_Program2()
 {
-           unsigned char check_byte; 
-           unsigned long int serial_number = 0;
-           //char addr;
-           float send_array[7];
-           serial_number = 0;
-           rx_wr_index = 0; 
-           reade2prom2 = 0;  
-           delay_ms(1000); 
-           check_byte = eeprom_read_byte(0);  
-           //serial_number = eeprom_read_dword(SERIAL_ADDR);
-           
-           //addr = PULSE_WIDTH_ADDR;
-           //pulseWidth = eeprom_read_byte(PULSE_WIDTH_ADDR);
-           //addr = WINDOW_SIZE_ADDR; 
-           //windowSize = eeprom_read_byte(WINDOW_SIZE_ADDR);
-           //addr = CUTT_OFF_ADDR;   
-           //cutt_off = eeprom_read_float(CUTT_OFF_ADDR); 
             
-           if (check_byte != 0xBB)
-           {
-            offset = 0;
-            gain = 0;
-           }
-           
-           /*send_array[0] = offset;
-           send_array[1] = gain;
-           send_array[2] = serial_number; 
-           send_array[3] = cutt_off;
-           send_array[4] = eeprom_avg_curr_sum_max; 
-           */
+          float send_array[7];
+          reade2prom2 = 0;
+          //LED =1;  
+           delay_ms(100); 
+           ///*
            send_array[0] = VERSION;   
            send_array[1] = pulseWidth;  
            send_array[2] = windowSize;   
            send_array[3] = cutt_off;
            send_array[4] = pulseMaxValuesLimit; 
            send_array[5] = diffSamplesLimit;
-           send_array[6] = signValue;                       
-           sendParamsFloat(send_array,7); 
-            //LED_R = 0;
+           send_array[6] = signValue;  
+           sendParamsFloat(send_array,7);
+           //*/
+          //printf("%4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f\n",VERSION,(float)pulseWidth,(float)windowSize,(float)cutt_off,(float)pulseMaxValuesLimit,(float)diffSamplesLimit,(float)signValue);
+          //printf("read_eeprom"); 
+          //LED = 0; 
+          rx_wr_index = 0; 
 }
 
 void processCuttOff(char addr)
@@ -831,7 +824,7 @@ void processCuttOff(char addr)
     char temp[20];
     unsigned char idx;
     idx = 0;        
-    
+    //printf("processCuttOff");
     memset(temp,'\0',20); 
     while(rx_buffer[idx+2] != 0x04 && idx < rx_wr_index)
     {
@@ -860,19 +853,21 @@ void processCuttOff(char addr)
                 eeprom_write_byte(PULSE_WIDTH_VALID,0x55);
                 eeprom_write_byte(PULSE_WIDTH_ADDR,pulseWidthTemp);
                 break;
-            case EP_SAMPLES_LIMIT_ADDR:     
+            case EP_SAMPLES_DIFF_LIMIT_ADDR:     
                 ep_change_diff_samples_limit_flag = 0;                  
                 diffSamplesLimit = atoi(temp);
                 // printf("pulseWidthTemp %d\n",pulseWidthTemp);    
-                eeprom_write_byte(EP_SAMPLES_LIMIT_VALID_ADDR,0x55);
-                eeprom_write_byte(EP_SAMPLES_LIMIT_ADDR,pulseWidthTemp);
+                eeprom_write_byte(EP_SAMPLES_DIFF_LIMIT_VALID_ADDR,0x55);
+                eeprom_write_word(EP_SAMPLES_DIFF_LIMIT_ADDR,diffSamplesLimit);
                 break;
             case EP_PULSE_MAX_VALUE_LIMIT_ADDR:
                 ep_change_pulse_limit_flag = 0;                  
                 pulseMaxValuesLimit = atoi(temp);
-                // printf("pulseWidthTemp %d\n",pulseWidthTemp);    
+                //printf("pulseMaxValuesLimit set to %d\n",pulseMaxValuesLimit);    
                 eeprom_write_byte(EP_PULSE_MAX_VALUE_LIMIT_VALID_ADDR,0x55);
-                eeprom_write_byte(EP_PULSE_MAX_VALUE_LIMIT_ADDR,pulseWidthTemp);
+                                
+                eeprom_write_word(EP_PULSE_MAX_VALUE_LIMIT_ADDR,pulseMaxValuesLimit);
+                //printf("pulseMaxValuesLimit read back %d\n",eeprom_read_word(EP_PULSE_MAX_VALUE_LIMIT_ADDR));
                 break;
             case SIGN_ADDR:  
                 inverseSignCmd = 0;

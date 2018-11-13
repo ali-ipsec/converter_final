@@ -31,7 +31,7 @@ PageIndex1=1
 OF2=def.c
 Active2=1
 EditorPanel2=0
-TimeStamp2=1297516040
+TimeStamp2=1297517481
 PageIndex2=2
 TimeStamp0=1292733452
 F1=main.c
@@ -511,7 +511,7 @@ Row=0
 Column=0
 ScrollPosX=0
 ScrollPosY=0
-TimeStamp=1297516119
+TimeStamp=1299021857
 [BookmarksFoldedCode]
 Files=5
 F1=main.c
@@ -554,11 +554,11 @@ BK9=-1
 [FoldedCode2]
 Blocks=0
 [Bookmarks3]
-TimeStamp=1297516040
-Row=359
-Column=19
+TimeStamp=1297517481
+Row=14
+Column=27
 ScrollPosX=0
-ScrollPosY=347
+ScrollPosY=0
 BK0=-1
 BK1=-1
 BK2=-1

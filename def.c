@@ -16,7 +16,6 @@
 #define L298_I1     PORTA.1
 #define L298_I2     PORTA.2
 #define L298_EN     PORTA.3
-//#define LED_G       PORTC.3
 #define LED         PORTC.4
 #define DIRECTION   PORTD.6
 #define EMPTY_PIPE  PORTD.7
@@ -51,12 +50,12 @@
 #define PULSE_WIDTH_ADDR 0x16
 #define WINDOW_SIZE_VALID_ADDR 0x17
 #define WINDOW_SIZE_ADDR 0x18
-#define EP_SAMPLES_LIMIT_VALID_ADDR 0x19
-#define EP_SAMPLES_LIMIT_ADDR 0x1a 
-#define EP_PULSE_MAX_VALUE_LIMIT_VALID_ADDR 0x1b
-#define EP_PULSE_MAX_VALUE_LIMIT_ADDR 0x1c 
-#define SIGN_VALID_ADDR   0x1d
-#define SIGN_ADDR   0x1e
+#define EP_SAMPLES_DIFF_LIMIT_VALID_ADDR 0x19
+#define EP_SAMPLES_DIFF_LIMIT_ADDR 0x1a 
+#define EP_PULSE_MAX_VALUE_LIMIT_VALID_ADDR 0x1c
+#define EP_PULSE_MAX_VALUE_LIMIT_ADDR 0x1d 
+#define SIGN_VALID_ADDR   0x1f
+#define SIGN_ADDR   0x20
 
 #define EP_MEASUREMENT 3
 #define NO_EP       0
@@ -65,15 +64,17 @@
 #define SAMPLE_DIFF_LEVEL 3
 
 
+
+
 #define SERIAL_NUMBER    12345678
 #define SHIFT_LENGHT_MAX 22
 #define SHIFT_DETERMINED_LENGTH  8
 #define EP_PULSE_MAX_VALUE_LIMIT      3900
 #define EP_SAMPLES_LIMIT    250
 #define CUTT_OFF 0.5
-#define VERSION 4.0
-//#define RANGE_2   // above 2.5inch 
-#ifdef RANGE_2
+#define VERSION 4.2
+//#define RANGE_ABOVE_2.5   // above 2.5inch 
+#ifdef RANGE_ABOVE_2.5
     #define TIMER_PRESCALE 0x03  // divide by 4
     #define TIMER_DIVIDER 3.9263    
 #else
@@ -101,12 +102,12 @@ float dbi_final = 0, offset = 0, dbi_added_value = 0, gain = 0, pulse_duration_1
          dbi_Q3 = 0, diff_Q3 = 0, dbi_Q2 = 0, diff_Q2 = 0, sum_avg_sum_min = 0, sum_avg_sum_max = 0, sum_avg_curr_sum_max= 0, sum_avg_curr_sum_min = 0,
          avg_curr_sum_max = 0, eeprom_avg_curr_sum_max = 0, cutt_off = 0 ;
 signed char signValue = 1;    
-signed int pulseMaxValuesLimit = 0, diffSamplesLimit = 0;     
+signed short int pulseMaxValuesLimit = 0, diffSamplesLimit = 0;     
 unsigned long int ovf_timer0_cnt = 0, pulse_edge_cnt = 0, eeprom_serial_num = 0;
 unsigned char db_changed = 0, pulseWidth = 0;
 
 void process_rx_buffer(void);
-void sendParamsMinMax(float * send_arr, unsigned char element_cnt);
+//void sendParamsMinMax(float * send_arr, unsigned char element_cnt);
 void sendParamsFloat(float * send_arr, unsigned char element_cnt);
 void send_f(float);
 //void sendAckResponse();
@@ -173,6 +174,7 @@ interrupt [EXT_INT1] void ext_int1_isr(void)
         if(measure_Q3_calib || measure_Q2_calib || accuracy_measurement)
         {
             TCCR0 = TIMER_ON;
+            TCNT0 = 0;
             state = TIME_DETECT;   
             pulse_is_detected = 1;
             ref_sensor_pulse_measurement_started = 1; 
@@ -185,7 +187,7 @@ interrupt [EXT_INT1] void ext_int1_isr(void)
         ref_sensor_pulse_measurement_stopped = 0; 
         break;
         case TIME_DETECT:
-            pulse_duration_1 = (TCNT0*0.004 + ovf_timer0_cnt*1.024);//
+            pulse_duration_1 = (TCNT0*0.039 + ovf_timer0_cnt*1.0052);//
             pulse_is_detected = 1;
             //pulse_duration_2 = 0;
             pulse_edge_cnt++;
@@ -277,10 +279,12 @@ if ((status & (FRAMING_ERROR | PARITY_ERROR | DATA_OVERRUN))==0)
       rx_buffer_overflow=1;
       }
 #endif
+      //   process_rx_buffer();
     if ((rx_buffer[rx_wr_index-1] == 0x04))
       {
          process_rx_buffer();
       }
+      
    }
 }
 
@@ -343,7 +347,8 @@ interrupt [TIM2_COMP] void timer2_comp_isr(void)
 {
  // Place your code here
  // Place your code here
-    static char state=0,counter=0;     
+    static char state=0; 
+    static unsigned short counter = 0;    
  //char str[16];      
  //pulse generator procedure 80ms up 80ms lo 180ms idle     
         
@@ -351,51 +356,55 @@ interrupt [TIM2_COMP] void timer2_comp_isr(void)
  {
     
     case 0:
-        if( counter >= EP_MEASUREMENT -1 )   
+        counter++;
+        /*if( counter >= EP_MEASUREMENT -1 )   
         {            
             ep_positive_pulse_measurement = 0;
             sample_ready_flag = 1;
             state = 1;
-        }    
-        counter++;         
+        }
+        */ 
+        
+        if( counter >= 1 && counter <= EP_MEASUREMENT )   
+        {            
+            ep_positive_pulse_measurement = 1; 
+            state = 0;                         
+            
+        }
+        else
+        {
+            ep_positive_pulse_measurement = 0;
+            sample_ready_flag = 1;  
+            state = 1;  
+        }
         break;
-    case 1:
+    case 1: 
+        counter++;
         if(sample_ready_flag == 1)  
         {
-            //140- 20 - 5 
             state = 1;
-            counter++;
-                                    
-          
-                   
+            
         }
         else 
-       
         {   
-            
-            if(counter >= pulseWidth - SAMPLE_DURATION - CURRENT_SAMPLE_DURATION && counter <= pulseWidth - SAMPLE_DURATION - 2)
+            if(counter >= pulseWidth - SAMPLE_DURATION - CURRENT_SAMPLE_DURATION && counter <= pulseWidth - SAMPLE_DURATION - 1)
                 current_sample_max = 1;
             else
                 current_sample_max = 0;
             // 140-20 
-            if(counter >= pulseWidth - SAMPLE_DURATION && counter <= pulseWidth - 2) // 30 - 5    
+            if(counter >= pulseWidth - SAMPLE_DURATION && counter <= pulseWidth - 1) // 100-20 100-20-1 80-99 = 20MS    
             {   
                read_max_samples = 1;
                 
             }
             else
                 read_max_samples = 0;
-            counter++;
             if(counter == pulseWidth) //140
             {           
                 counter=0;
-                
-                //LED = 1;
-                //DIRECTION = 0;
-                
                 L298_I1=0;
                 L298_I2=1;
-                ep_negative_pulse_measurement = 1;
+                //ep_negative_pulse_measurement = 1;
                 state=2;
             }  
         }
@@ -407,7 +416,7 @@ interrupt [TIM2_COMP] void timer2_comp_isr(void)
         {          
             counter=0;  
            
-            //DIRECTION = 0;
+            
             L298_I1=0; 
             L298_I2=1;  
             state=2;
@@ -415,37 +424,44 @@ interrupt [TIM2_COMP] void timer2_comp_isr(void)
     break; 
     */
     //---------
-    case 2:
-        if(counter < EP_MEASUREMENT - 1)
-        {
+    case 2: 
+        counter++;
+        if( counter >= 1 && counter <= EP_MEASUREMENT )   
+        {            
             ep_negative_pulse_measurement = 1;
-        }                         
-        else                      
+           
+        }
+        //if(counter < EP_MEASUREMENT - 1)
+        //{
+        //    ep_negative_pulse_measurement = 1;
+        //}                         
+        else  
             ep_negative_pulse_measurement = 0;
         if (counter < pulseWidth - SAMPLE_DURATION - CURRENT_SAMPLE_DURATION - 1)
             respose_uart_activity = 1;
         else
             respose_uart_activity = 0;         
-        if(counter >= pulseWidth - SAMPLE_DURATION - CURRENT_SAMPLE_DURATION && counter <= pulseWidth - SAMPLE_DURATION - 2)
+        if(counter >= pulseWidth - SAMPLE_DURATION - CURRENT_SAMPLE_DURATION && counter <= pulseWidth - SAMPLE_DURATION - 1)
             current_sample_min = 1;
         else
             current_sample_min = 0; 
-        if(counter >= pulseWidth - SAMPLE_DURATION  && counter <= pulseWidth - 2)
+        if(counter >= pulseWidth - SAMPLE_DURATION  && counter <= pulseWidth - 1)
         {  
            read_min_samples = 1;
         }
         else
             read_min_samples = 0;
-        counter++;
+        
         if(counter == pulseWidth)
         {          
             counter=0;  
              
-            //DIRECTION = 0;
-            //LED = 0; 
+            
+             
             L298_I1=1; 
-            ep_positive_pulse_measurement = 1;
+            //ep_positive_pulse_measurement = 1;
             L298_I2 = 0;  
+            
             //sample_ready_flag=1;
             pulseWidth = pulseWidthTemp;
             windowSize = windowSizeTemp; 
@@ -463,7 +479,7 @@ interrupt [TIM2_COMP] void timer2_comp_isr(void)
         counter=0; 
         
         L298_I1=1;    
-        //DIRECTION = 1;
+        
         L298_I2=0;   
        
         if(sample_ready_flag==0) 
@@ -489,7 +505,7 @@ void process_rx_buffer()
             
     if (rx_buffer[i] == 3 && rx_buffer[rx_wr_index-1] == 4)
     {
-        //LED_R =1;   
+          
          switch (rx_buffer[i+1])
         {
             case 0x01:
@@ -612,11 +628,12 @@ void sendParamsFloat(float * send_arr, unsigned char element_cnt)
   }
   i--;                   
   send[i++] = 4;
-   //send[i] = 10;
-   //*/                     
+  
+                       
    for(k = 0; k < i; k++)
       putchar(send[k]); 
 }
+/*
 void sendParamsMinMax(float * send_arr, unsigned char element_cnt)
 {
    char send[80];       
@@ -640,10 +657,11 @@ void sendParamsMinMax(float * send_arr, unsigned char element_cnt)
   //i++;                   
   send[i++] = 0x4;
    //send[i] = 10;
-   //*/                     
+                    
    for(k = 0; k < i; k++)
       putchar(send[k]);
 }
+*/
 /*
 void sendAckResponse()
 {
@@ -665,8 +683,8 @@ void read_eeprom_values()
    unsigned char check_byte = eeprom_read_byte(0); 
    unsigned char pulseWidthCheckByte = eeprom_read_byte(PULSE_WIDTH_VALID);
    unsigned char winSizeCheckByte = eeprom_read_byte(WINDOW_SIZE_VALID_ADDR);    
-   unsigned char ep_pulse_max_value_limit =  eeprom_read_byte(EP_PULSE_MAX_VALUE_LIMIT_VALID_ADDR);
-   unsigned char ep_samples_limit =  eeprom_read_byte(EP_SAMPLES_LIMIT_ADDR);
+   unsigned char epMaxValLimitCheck =  eeprom_read_byte(EP_PULSE_MAX_VALUE_LIMIT_VALID_ADDR);
+   unsigned char epSamplesLimitCheck=  eeprom_read_byte(EP_SAMPLES_DIFF_LIMIT_ADDR);
    signed char signVal =  eeprom_read_byte(SIGN_VALID_ADDR);
   // eeprom_serial_num = eeprom_read_dword(SERIAL_ADDR);
    printf("check_byte %x pulseCheck %x\n",winSizeCheckByte,pulseWidthCheckByte);
@@ -682,28 +700,28 @@ void read_eeprom_values()
         signValue = eeprom_read_byte(SIGN_ADDR);
         printf("SIGN set to default %d\n",signValue);
    }
-   if(ep_pulse_max_value_limit != 0x55)
+   if(epMaxValLimitCheck != 0x55)
    {
       pulseMaxValuesLimit = EP_PULSE_MAX_VALUE_LIMIT;
-      eeprom_write_byte(EP_PULSE_MAX_VALUE_LIMIT_ADDR,pulseMaxValuesLimit);
+      eeprom_write_word(EP_PULSE_MAX_VALUE_LIMIT_ADDR,pulseMaxValuesLimit);
       printf("pulseMaxValuesLimitDefault %d\n",pulseMaxValuesLimit);
    }
    else
    {
      addr = EP_PULSE_MAX_VALUE_LIMIT_ADDR; 
-     pulseMaxValuesLimit = eeprom_read_byte(addr);
+     pulseMaxValuesLimit = eeprom_read_word(addr);
      printf("pulseMaxValuesLimit %d\n",pulseMaxValuesLimit);
    }
-   if(ep_samples_limit != 0x55)
+   if(epSamplesLimitCheck != 0x55)
    {
      diffSamplesLimit = EP_SAMPLES_LIMIT;
-     eeprom_write_byte(EP_SAMPLES_LIMIT_ADDR,diffSamplesLimit);
+     eeprom_write_word(EP_SAMPLES_DIFF_LIMIT_ADDR,diffSamplesLimit);
      printf("diffSamplesLimit default %d\n",diffSamplesLimit);
    }
    else
    {
-     addr = EP_SAMPLES_LIMIT_ADDR; 
-     diffSamplesLimit = eeprom_read_byte(addr);
+     addr = EP_SAMPLES_DIFF_LIMIT_ADDR; 
+     diffSamplesLimit = eeprom_read_word(addr);
      printf("diffSamplesLimit %d\n",diffSamplesLimit); 
    }
    if(winSizeCheckByte != 0x55)  // check window size
